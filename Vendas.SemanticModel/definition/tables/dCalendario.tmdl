@@ -8,11 +8,6 @@ table dCalendario
 		summarizeBy: none
 		sourceColumn: Data
 
-		variation Variation
-			isDefault
-			relationship: 007a2f1c-a1e6-413f-a75f-8eb224970332
-			defaultHierarchy: LocalDateTable_79a44d53-a38b-4249-83c4-6fdcf6c62c2a.'Hierarquia de datas'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date

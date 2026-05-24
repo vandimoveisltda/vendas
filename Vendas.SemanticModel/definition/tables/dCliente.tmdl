@@ -74,11 +74,6 @@ table dCliente
 		summarizeBy: none
 		sourceColumn: data_cadastro
 
-		variation Variation
-			isDefault
-			relationship: 7e83fda8-b324-4bcb-bee2-a5df9e544792
-			defaultHierarchy: LocalDateTable_fbacc7c1-cc73-4b45-a8ce-79c15263c6d1.'Hierarquia de datas'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
