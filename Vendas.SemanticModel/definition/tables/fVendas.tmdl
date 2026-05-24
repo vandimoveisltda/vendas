@@ -1,6 +1,63 @@
 table fVendas
 	lineageTag: d52d6048-7914-49ac-8225-26b17a8a1d0c
 
+	measure 'Receita Líquida' = SUM(fVendas[valor_liquido_brl])
+		lineageTag: a1269ad9-7861-4b86-90b6-023db7d53351
+
+	measure 'Receita Bruta' = SUM(fVendas[valor_bruto_brl])
+		lineageTag: 10678ed1-989b-4225-bd44-95c9b0a366fe
+
+	measure 'Custo Total' = SUM(fVendas[custo_total_brl])
+		lineageTag: 721d5719-2c64-41e7-b741-efc761ab7db0
+
+	measure 'Quantidade Total' = SUM(fVendas[quantidade])
+		lineageTag: 4ecbe4e1-6b4f-43a9-9389-1003585d7e9b
+
+	measure 'Preço Médio Unitário' = AVERAGE(fVendas[preco_unitario_brl])
+		lineageTag: cb750e4d-a184-46f6-8471-4e97cccb4a49
+
+	measure 'Desconto Médio %' = AVERAGE(fVendas[desconto_pct])
+		lineageTag: 3e13009a-49ea-476a-9a4b-5a9d5a47605c
+
+	measure 'Valor Médio Desconto' = AVERAGE(fVendas[valor_desconto_brl])
+		lineageTag: 3ac912df-c26e-4c12-a0ee-88b6d008de6d
+
+	measure 'Ticket Médio' = DIVIDE([Receita Líquida], DISTINCTCOUNT(fVendas[id_pedido]), 0)
+		lineageTag: f466cf4b-c55e-42b4-876e-ccace40ac39b
+
+	measure 'Clientes Ativos' = DISTINCTCOUNT(fVendas[id_cliente])
+		lineageTag: a8b96347-0afa-406d-b00f-61977450df31
+
+	measure 'Vendas Ano Anterior' = CALCULATE([Receita Líquida], SAMEPERIODLASTYEAR(dCalendario[Data]))
+		lineageTag: 34dbff71-9f25-476a-9293-f4128bdc4577
+
+	measure 'Vendas 12M' = CALCULATE([Receita Líquida], DATESINPERIOD(dCalendario[Data], MAX(dCalendario[Data]), -12, MONTH))
+		lineageTag: 29712eca-0748-4d2a-9f4d-386847a91c41
+
+	measure 'Receita por Unidade' = DIVIDE([Receita Líquida], [Quantidade Total], 0)
+		lineageTag: 9f2ab5c9-9974-4a05-a19a-bb58fc073dca
+
+	measure '% Pedidos com Desconto' = DIVIDE(CALCULATE(DISTINCTCOUNT(fVendas[id_pedido]), fVendas[desconto_pct] > 0), DISTINCTCOUNT(fVendas[id_pedido]), 0)
+		lineageTag: 45bd996f-bb47-41ea-95d2-aefbcb15f692
+
+	measure 'Contador Anomalias' = COUNTROWS(fVendas_Anomalias)
+		lineageTag: 34d026a0-1aa9-41e4-97d6-aad9b68c059e
+
+	measure 'Lucro Bruto' = [Receita Líquida] - [Custo Total]
+		lineageTag: d11c97ef-5eed-4b30-81ea-13f501d71eda
+
+	measure 'Margem Bruta %' = DIVIDE([Lucro Bruto], [Receita Líquida], 0)
+		lineageTag: dc5144c0-ac31-453a-96b7-9a97db03bbcd
+
+	measure 'Taxa de Repetição' = VAR Clientes = SUMMARIZE(fVendas, fVendas[id_cliente], "Pedidos", DISTINCTCOUNT(fVendas[id_pedido])) VAR ClientesRepetidos = COUNTROWS(FILTER(Clientes, [Pedidos] > 1)) RETURN DIVIDE(ClientesRepetidos, COUNTROWS(Clientes), 0)
+		lineageTag: f5a5a578-2db8-44b2-9e87-d6ba085a1190
+
+	measure 'Crescimento YoY %' = DIVIDE([Receita Líquida] - [Vendas Ano Anterior], [Vendas Ano Anterior], 0)
+		lineageTag: e8aee18f-346e-41d1-9f1f-f23e70bb22f3
+
+	measure Corr_Qtd_Preco = VAR T = FILTER(ALL(fVendas), NOT(ISBLANK(fVendas[quantidade])) && NOT(ISBLANK(fVendas[preco_unitario_brl]))) VAR N = COUNTROWS(T) VAR MeanQ = AVERAGEX(T, fVendas[quantidade]) VAR MeanP = AVERAGEX(T, fVendas[preco_unitario_brl]) VAR Cov = SUMX(T, (fVendas[quantidade] - MeanQ) * (fVendas[preco_unitario_brl] - MeanP)) / N VAR StdevQ = SQRT(SUMX(T, POWER(fVendas[quantidade] - MeanQ, 2)) / N) VAR StdevP = SQRT(SUMX(T, POWER(fVendas[preco_unitario_brl] - MeanP, 2)) / N) RETURN DIVIDE(Cov, StdevQ * StdevP, BLANK())
+		lineageTag: 8f91ca80-beb8-47bc-8041-f8892c127d42
+
 	column id_venda
 		dataType: int64
 		formatString: 0
@@ -143,92 +200,11 @@ table fVendas
 
 		annotation SummarizationSetBy = Automatic
 
-	measure 'Receita Bruta' = SUM('fVendas'[valor_bruto_brl])
-		formatString: R$ #,0.00
-
-	measure 'Receita Liquida' = SUM('fVendas'[valor_liquido_brl])
-		formatString: R$ #,0.00
-
-	measure 'Desconto Total' = SUM('fVendas'[valor_desconto_brl])
-		formatString: R$ #,0.00
-
-	measure 'Desconto %' = DIVIDE([Desconto Total], [Receita Bruta])
-		formatString: 0.00%;-0.00%;0.00%
-
-	measure 'Custo Total' = SUM('fVendas'[custo_total_brl])
-		formatString: R$ #,0.00
-
-	measure 'Lucro Bruto' = [Receita Liquida] - [Custo Total]
-		formatString: R$ #,0.00
-
-	measure 'Margem Bruta %' = DIVIDE([Lucro Bruto], [Receita Liquida])
-		formatString: 0.00%;-0.00%;0.00%
-
-	measure 'Quantidade Vendida' = SUM('fVendas'[quantidade])
-		formatString: #,0
-
-	measure Pedidos = DISTINCTCOUNT('fVendas'[id_pedido])
-		formatString: #,0
-
-	measure Vendas = DISTINCTCOUNT('fVendas'[id_venda])
-		formatString: #,0
-
-	measure 'Clientes Ativos' = DISTINCTCOUNT('fVendas'[id_cliente])
-		formatString: #,0
-
-	measure 'Produtos Vendidos' = DISTINCTCOUNT('fVendas'[id_produto])
-		formatString: #,0
-
-	measure 'Ticket Medio' = DIVIDE([Receita Liquida], [Pedidos])
-		formatString: R$ #,0.00
-
-	measure 'Itens por Pedido' = DIVIDE([Quantidade Vendida], [Pedidos])
-		formatString: #,0.00
-
-	measure 'Preco Medio Unitario' = DIVIDE([Receita Liquida], [Quantidade Vendida])
-		formatString: R$ #,0.00
-
-	measure 'Custo Medio Unitario' = DIVIDE([Custo Total], [Quantidade Vendida])
-		formatString: R$ #,0.00
-
-	measure 'Lucro Medio por Pedido' = DIVIDE([Lucro Bruto], [Pedidos])
-		formatString: R$ #,0.00
-
-	measure 'Receita por Cliente Ativo' = DIVIDE([Receita Liquida], [Clientes Ativos])
-		formatString: R$ #,0.00
-
-	measure 'Pedidos por Cliente Ativo' = DIVIDE([Pedidos], [Clientes Ativos])
-		formatString: #,0.00
-
-	measure 'Produtos por Pedido' = DIVIDE([Produtos Vendidos], [Pedidos])
-		formatString: #,0.00
-
-	measure 'Vendas com Desconto' = CALCULATE([Vendas], 'fVendas'[valor_desconto_brl] > 0)
-		formatString: #,0
-
-	measure 'Vendas com Desconto %' = DIVIDE([Vendas com Desconto], [Vendas])
-		formatString: 0.00%;-0.00%;0.00%
-
-	measure 'Receita Liquida MTD' = TOTALMTD([Receita Liquida], 'dCalendario'[Data])
-		formatString: R$ #,0.00
-
-	measure 'Receita Liquida YTD' = TOTALYTD([Receita Liquida], 'dCalendario'[Data])
-		formatString: R$ #,0.00
-
-	measure 'Receita Liquida Ano Anterior' = CALCULATE([Receita Liquida], SAMEPERIODLASTYEAR('dCalendario'[Data]))
-		formatString: R$ #,0.00
-
-	measure 'Variacao Receita YoY %' = DIVIDE([Receita Liquida] - [Receita Liquida Ano Anterior], [Receita Liquida Ano Anterior])
-		formatString: 0.00%;-0.00%;0.00%
-
-	measure 'Margem Perdida por Desconto %' = DIVIDE([Desconto Total], [Lucro Bruto] + [Desconto Total])
-		formatString: 0.00%;-0.00%;0.00%
-
 	partition fVendas = m
 		mode: import
 		source =
 				let
-				    Fonte = Csv.Document(File.Contents("C:\Users\roger\Desktop\materiais\raw\fato_vendas_raw.csv"),[Delimiter=";", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    Fonte = Csv.Document(File.Contents(CaminhoBaseDados & "fato_vendas_raw.csv"),[Delimiter=";", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
 				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
 				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"id_venda", Int64.Type}, {"id_pedido", Int64.Type}, {"data_venda", type date}, {"id_cliente", Int64.Type}, {"id_produto", Int64.Type}, {"quantidade", Int64.Type}, {"preco_tabela_brl", type number}, {"desconto_pct", type number}, {"preco_unitario_brl", type number}, {"valor_bruto_brl", type number}, {"valor_desconto_brl", type number}, {"valor_liquido_brl", type number}, {"custo_total_brl", type number}, {"canal_venda", type text}, {"forma_pagamento", type text}})
 				in

@@ -1,0 +1,108 @@
+table fVendas_Anomalias
+	lineageTag: a1f5d3b2-0000-4000-8000-000000000001
+
+	column id_venda
+		dataType: int64
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000002
+
+	column id_pedido
+		dataType: int64
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000003
+
+	column data_venda
+		dataType: dateTime
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000004
+
+	column id_cliente
+		dataType: int64
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000005
+
+	column id_produto
+		dataType: int64
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000006
+
+	column quantidade
+		dataType: int64
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000007
+
+	column desconto_pct
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000008
+
+	column preco_unitario_brl
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-000000000009
+
+	column valor_bruto_brl
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000a
+
+	column valor_desconto_brl
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000b
+
+	column valor_liquido_brl
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000c
+
+	column custo_total_brl
+		dataType: double
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000d
+
+	column anomaly_type
+		dataType: string
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000e
+
+	column anomaly_details
+		dataType: string
+		lineageTag: a1f5d3b2-0000-4000-8000-00000000000f
+
+	partition fVendas_Anomalias = m
+		mode: import
+		source =
+				let
+				    Fonte = Csv.Document(File.Contents(CaminhoBaseDados & "fato_vendas_raw.csv"),[Delimiter=";", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    Promovidos = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+				    Tipos = Table.TransformColumnTypes(Promovidos,{{"id_venda", Int64.Type}, {"id_pedido", Int64.Type}, {"data_venda", type date}, {"id_cliente", Int64.Type}, {"id_produto", Int64.Type}, {"quantidade", Int64.Type}, {"preco_tabela_brl", type number}, {"desconto_pct", type number}, {"preco_unitario_brl", type number}, {"valor_bruto_brl", type number}, {"valor_desconto_brl", type number}, {"valor_liquido_brl", type number}, {"custo_total_brl", type number}, {"canal_venda", type text}, {"forma_pagamento", type text}}),
+				    // calcular valores esperados
+				    WithExpected = Table.AddColumn(Tipos, "Expected", each [preco_unitario_brl] * Number.From([quantidade])),
+				    WithExpected2 = Table.AddColumn(WithExpected, "ExpectedDiscount", each [Expected] * Number.From([desconto_pct])),
+				    WithExpected3 = Table.AddColumn(WithExpected2, "ExpectedNet", each [Expected] - [ExpectedDiscount]),
+				    // diferença entre valor_liquido e esperado
+				    WithDiff = Table.AddColumn(WithExpected3, "DiffNet", each Number.Round(Number.From([valor_liquido_brl]) - Number.From([ExpectedNet]), 2)),
+				    // regras de anomalia
+				    Flagged = Table.AddColumn(WithDiff, "Anomalies", each
+				        let
+				            q = try Number.From([quantidade]) otherwise null,
+				            d = try Number.From([desconto_pct]) otherwise null,
+				            p = try Number.From([preco_unitario_brl]) otherwise null,
+				            diff = try Number.Abs([DiffNet]) otherwise null,
+				            problems = List.RemoveNulls({
+				                if q = null then "quantidade_null" else null,
+				                if q <> null and q <= 0 then "quantidade <= 0" else null,
+				                if q <> null and q > 10000 then "quantidade muito alta" else null,
+				                if d = null then "desconto_null" else null,
+				                if d <> null and d < 0 then "desconto < 0" else null,
+				                if d <> null and d > 1 and d <= 100 then "desconto em porcentagem (0-100)" else null,
+				                if d <> null and d > 100 then "desconto > 100" else null,
+				                if p = null then "preco_unitario_null" else null,
+				                if p <> null and p <= 0 then "preco_unitario <= 0" else null,
+				                if diff <> null and diff <> 0 and diff > 1 then "valor_liquido inconsistente (dif > 1)" else null
+				            }),
+				            joined = Text.Combine(problems, "; ")
+				        in
+				            joined
+				    ),
+				    // marca tipo de anomalia (se houver)
+				    WithAnomalyType = Table.AddColumn(Flagged, "AnomalyType", each if Text.Length([Anomalies])>0 then "Issue" else "OK"),
+				    // selecionar somente as linhas com problemas
+				    OnlyProblems = Table.SelectRows(WithAnomalyType, each Text.Length([Anomalies])>0),
+				    // selecionar e renomear colunas relevantes
+				    SelectCols = Table.SelectColumns(OnlyProblems, {"id_venda","id_pedido","data_venda","id_cliente","id_produto","quantidade","desconto_pct","preco_unitario_brl","valor_bruto_brl","valor_desconto_brl","valor_liquido_brl","custo_total_brl","AnomalyType","Anomalies"}),
+				    Renamed = Table.RenameColumns(SelectCols,{{"AnomalyType","anomaly_type"},{"Anomalies","anomaly_details"}})
+				in
+				    Renamed
+
+	annotation PBI_NavigationStepName = Anomalias
+
+	annotation PBI_ResultType = Table

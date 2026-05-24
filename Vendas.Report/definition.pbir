@@ -2,7 +2,7 @@
   "version": "4.0",
   "datasetReference": {
     "byPath": {
-      "path": "../Vendas.SemanticModel"
+      "path": "../Vendas.SemanticModel/definition.pbism"
     }
   }
 }
