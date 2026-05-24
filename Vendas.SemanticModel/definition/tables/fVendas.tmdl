@@ -143,6 +143,87 @@ table fVendas
 
 		annotation SummarizationSetBy = Automatic
 
+	measure 'Receita Bruta' = SUM('fVendas'[valor_bruto_brl])
+		formatString: R$ #,0.00
+
+	measure 'Receita Liquida' = SUM('fVendas'[valor_liquido_brl])
+		formatString: R$ #,0.00
+
+	measure 'Desconto Total' = SUM('fVendas'[valor_desconto_brl])
+		formatString: R$ #,0.00
+
+	measure 'Desconto %' = DIVIDE([Desconto Total], [Receita Bruta])
+		formatString: 0.00%;-0.00%;0.00%
+
+	measure 'Custo Total' = SUM('fVendas'[custo_total_brl])
+		formatString: R$ #,0.00
+
+	measure 'Lucro Bruto' = [Receita Liquida] - [Custo Total]
+		formatString: R$ #,0.00
+
+	measure 'Margem Bruta %' = DIVIDE([Lucro Bruto], [Receita Liquida])
+		formatString: 0.00%;-0.00%;0.00%
+
+	measure 'Quantidade Vendida' = SUM('fVendas'[quantidade])
+		formatString: #,0
+
+	measure Pedidos = DISTINCTCOUNT('fVendas'[id_pedido])
+		formatString: #,0
+
+	measure Vendas = DISTINCTCOUNT('fVendas'[id_venda])
+		formatString: #,0
+
+	measure 'Clientes Ativos' = DISTINCTCOUNT('fVendas'[id_cliente])
+		formatString: #,0
+
+	measure 'Produtos Vendidos' = DISTINCTCOUNT('fVendas'[id_produto])
+		formatString: #,0
+
+	measure 'Ticket Medio' = DIVIDE([Receita Liquida], [Pedidos])
+		formatString: R$ #,0.00
+
+	measure 'Itens por Pedido' = DIVIDE([Quantidade Vendida], [Pedidos])
+		formatString: #,0.00
+
+	measure 'Preco Medio Unitario' = DIVIDE([Receita Liquida], [Quantidade Vendida])
+		formatString: R$ #,0.00
+
+	measure 'Custo Medio Unitario' = DIVIDE([Custo Total], [Quantidade Vendida])
+		formatString: R$ #,0.00
+
+	measure 'Lucro Medio por Pedido' = DIVIDE([Lucro Bruto], [Pedidos])
+		formatString: R$ #,0.00
+
+	measure 'Receita por Cliente Ativo' = DIVIDE([Receita Liquida], [Clientes Ativos])
+		formatString: R$ #,0.00
+
+	measure 'Pedidos por Cliente Ativo' = DIVIDE([Pedidos], [Clientes Ativos])
+		formatString: #,0.00
+
+	measure 'Produtos por Pedido' = DIVIDE([Produtos Vendidos], [Pedidos])
+		formatString: #,0.00
+
+	measure 'Vendas com Desconto' = CALCULATE([Vendas], 'fVendas'[valor_desconto_brl] > 0)
+		formatString: #,0
+
+	measure 'Vendas com Desconto %' = DIVIDE([Vendas com Desconto], [Vendas])
+		formatString: 0.00%;-0.00%;0.00%
+
+	measure 'Receita Liquida MTD' = TOTALMTD([Receita Liquida], 'dCalendario'[Data])
+		formatString: R$ #,0.00
+
+	measure 'Receita Liquida YTD' = TOTALYTD([Receita Liquida], 'dCalendario'[Data])
+		formatString: R$ #,0.00
+
+	measure 'Receita Liquida Ano Anterior' = CALCULATE([Receita Liquida], SAMEPERIODLASTYEAR('dCalendario'[Data]))
+		formatString: R$ #,0.00
+
+	measure 'Variacao Receita YoY %' = DIVIDE([Receita Liquida] - [Receita Liquida Ano Anterior], [Receita Liquida Ano Anterior])
+		formatString: 0.00%;-0.00%;0.00%
+
+	measure 'Margem Perdida por Desconto %' = DIVIDE([Desconto Total], [Lucro Bruto] + [Desconto Total])
+		formatString: 0.00%;-0.00%;0.00%
+
 	partition fVendas = m
 		mode: import
 		source =
