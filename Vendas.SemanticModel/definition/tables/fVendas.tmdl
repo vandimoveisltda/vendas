@@ -204,7 +204,7 @@ table fVendas
 		mode: import
 		source =
 				let
-				    Fonte = Csv.Document(File.Contents("C:\Users\roger\Desktop\materiais\raw\fato_vendas_raw.csv"),[Delimiter=";", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    Fonte = Csv.Document(File.Contents(CaminhoBaseDados & "fato_vendas_raw.csv"),[Delimiter=";", Columns=15, Encoding=65001, QuoteStyle=QuoteStyle.None]),
 				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
 				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"id_venda", Int64.Type}, {"id_pedido", Int64.Type}, {"data_venda", type date}, {"id_cliente", Int64.Type}, {"id_produto", Int64.Type}, {"quantidade", Int64.Type}, {"preco_tabela_brl", type number}, {"desconto_pct", type number}, {"preco_unitario_brl", type number}, {"valor_bruto_brl", type number}, {"valor_desconto_brl", type number}, {"valor_liquido_brl", type number}, {"custo_total_brl", type number}, {"canal_venda", type text}, {"forma_pagamento", type text}})
 				in

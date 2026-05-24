@@ -74,11 +74,6 @@ table dCliente
 		summarizeBy: none
 		sourceColumn: data_cadastro
 
-		variation Variation
-			isDefault
-			relationship: 7e83fda8-b324-4bcb-bee2-a5df9e544792
-			defaultHierarchy: LocalDateTable_fbacc7c1-cc73-4b45-a8ce-79c15263c6d1.'Hierarquia de datas'
-
 		annotation SummarizationSetBy = Automatic
 
 		annotation UnderlyingDateTimeDataType = Date
@@ -87,7 +82,7 @@ table dCliente
 		mode: import
 		source =
 				let
-				    Fonte = Csv.Document(File.Contents("C:\Users\roger\Desktop\materiais\raw\dim_cliente_raw.csv"),[Delimiter=";", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    Fonte = Csv.Document(File.Contents(CaminhoBaseDados & "dim_cliente_raw.csv"),[Delimiter=";", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
 				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
 				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"id_cliente", Int64.Type}, {"nome_cliente", type text}, {"cnpj", type text}, {"tipo_cliente", type text}, {"uf", type text}, {"uf_nome", type text}, {"cidade", type text}, {"limite_credito_brl", Int64.Type}, {"data_cadastro", type date}})
 				in

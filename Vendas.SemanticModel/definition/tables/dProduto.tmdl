@@ -85,7 +85,7 @@ table dProduto
 		mode: import
 		source =
 				let
-				    Fonte = Csv.Document(File.Contents("C:\Users\roger\Desktop\materiais\raw\dim_produto_raw.csv"),[Delimiter=";", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+				    Fonte = Csv.Document(File.Contents(CaminhoBaseDados & "dim_produto_raw.csv"),[Delimiter=";", Columns=9, Encoding=65001, QuoteStyle=QuoteStyle.None]),
 				    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
 				    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"id_produto", Int64.Type}, {"sku", type text}, {"descricao", type text}, {"categoria", type text}, {"veiculo_aplicacao", type text}, {"peso_kg", type number}, {"custo_unit_usd", type number}, {"preco_unit_brl", type number}, {"qtd_por_embalagem", Int64.Type}})
 				in

@@ -9,3 +9,13 @@ expression Datas =
 
 	annotation PBI_ResultType = Function
 
+expression CaminhoBaseDados =
+		let
+		    Fonte = "C:\Grupo6-Power-Skills\materiais\raw\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+		in
+		    Fonte
+	lineageTag: 0f33d9c5-1c62-4a8c-a6a4-8dfd0df4c9a1
+
+	annotation PBI_NavigationStepName = Parametro
+
+	annotation PBI_ResultType = Text
